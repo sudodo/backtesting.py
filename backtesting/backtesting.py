@@ -40,6 +40,25 @@ __pdoc__ = {
     'Trade.__init__': False,
 }
 
+LOG_FILE = "tmp/backtesting.log"
+# Logging is always nice for your experiment:)
+def init_logger(log_file):
+    from logging import getLogger, INFO, FileHandler,  Formatter,  StreamHandler, DEBUG
+    logger = getLogger(__name__)
+    #logger.setLevel(INFO)
+    logger.setLevel(DEBUG)    
+#     handler1 = StreamHandler()
+#     handler1.setFormatter(Formatter("%(message)s"))
+
+    handler2 = FileHandler(filename=log_file)
+    handler2.setFormatter(Formatter('%(asctime)s %(levelname)-8s %(funcName)10s() %(message)s'))
+#     logger.addHandler(handler1)
+    logger.addHandler(handler2)
+    return logger
+
+logger = init_logger(LOG_FILE)
+logger.info('Start Logging...')
+
 
 class Strategy(metaclass=ABCMeta):
     """
@@ -807,6 +826,13 @@ class _Broker:
                 is_limit_hit = low < order.limit if order.is_long else high > order.limit
                 # When stop and limit are hit within the same bar, we pessimistically
                 # assume limit was hit before the stop (i.e. "before it counts")
+                try:
+                    logger.debug(f'datetime {data["timestamp"][-1]}')
+                    logger.debug(f"order.is_long, low, high, order.limit {order.is_long, low, high, order.limit}")
+                    logger.debug(f"is_limit_hit {is_limit_hit}")
+                except:
+                    pass
+
                 is_limit_hit_before_stop = (is_limit_hit and
                                             (order.limit < (stop_price or -np.inf)
                                              if order.is_long
@@ -1132,6 +1158,7 @@ class Backtest:
             _trades                       Size  EntryB...
             dtype: object
         """
+        logger.debug("I am sudodo")
         data = _Data(self._data.copy(deep=False))
         broker: _Broker = self._broker(data=data)
         strategy: Strategy = self._strategy(broker, data, kwargs)
